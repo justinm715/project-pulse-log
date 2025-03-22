@@ -68,8 +68,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   
   return (
     <div 
-      className="rounded-lg glass shadow-glass hover:shadow-glass-hover transition-all overflow-hidden"
-      style={{ borderLeft: `3px solid ${project.color}` }}
+      className={`rounded-lg glass shadow-glass hover:shadow-glass-hover transition-all overflow-hidden ${
+        project.isActive ? 'border-green-400 dark:border-green-500' : ''
+      }`}
+      style={{ borderLeft: `3px solid ${project.isActive ? '#4ade80' : project.color}` }}
     >
       <div className="p-3">
         <div className="flex items-center justify-between">
@@ -87,7 +89,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-1">
-              <h3 className="text-base font-medium">{project.name}</h3>
+              <h3 className={`text-base font-medium ${project.isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
+                {project.name}
+              </h3>
               <button
                 onClick={() => setEditingTitle(true)}
                 className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md"
@@ -108,7 +112,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         </div>
         
         <div className="flex items-center justify-between mt-2">
-          <div className="text-base font-mono tracking-tighter">
+          <div className={`text-base font-mono tracking-tighter ${project.isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
             {formatDuration(elapsedTime)}
           </div>
           
@@ -116,7 +120,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             onClick={handleStartStop}
             className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all ${
               project.isActive 
-                ? 'bg-secondary text-foreground' 
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' 
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'
             }`}
           >

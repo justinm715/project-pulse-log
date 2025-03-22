@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TimeSession as TimeSessionType } from '@/types';
 import { formatTime, formatDate, formatDuration, calculateSessionDuration } from '@/lib/timeUtils';
 import { useProjects } from '@/contexts/ProjectContext';
@@ -14,8 +14,20 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
   const { deleteSession, updateSessionNote } = useProjects();
   const [isEditing, setIsEditing] = useState(false);
   const [note, setNote] = useState(session.note);
+  const [currentDuration, setCurrentDuration] = useState(
+    session.duration || calculateSessionDuration(session.startTime, session.endTime)
+  );
   
-  const duration = session.duration || calculateSessionDuration(session.startTime, session.endTime);
+  // Update time for active sessions
+  useEffect(() => {
+    if (session.endTime === null) {
+      const interval = setInterval(() => {
+        setCurrentDuration(calculateSessionDuration(session.startTime, new Date()));
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [session]);
   
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNote(e.target.value);
@@ -32,8 +44,10 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
     }
   };
   
+  const isActive = session.endTime === null;
+  
   return (
-    <div className="p-3 rounded-md bg-card border hover:shadow-subtle transition-all">
+    <div className={`p-3 rounded-md bg-card border hover:shadow-subtle transition-all ${isActive ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -44,8 +58,8 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
             </span>
           </div>
           
-          <div className="text-sm font-mono tracking-tighter mt-1">
-            {formatDuration(duration)}
+          <div className={`text-sm font-mono tracking-tighter mt-1 ${isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
+            {formatDuration(currentDuration)}
           </div>
           
           {isEditing ? (
