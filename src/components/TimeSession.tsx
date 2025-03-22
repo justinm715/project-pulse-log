@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TimeSession as TimeSessionType } from '@/types';
 import { formatTime, formatDate, formatDuration, calculateSessionDuration } from '@/lib/timeUtils';
 import { useProjects } from '@/contexts/ProjectContext';
-import { Clock, AlignLeft, Trash } from 'lucide-react';
+import { Clock, AlignLeft, Trash, Play, Move } from 'lucide-react';
 
 interface TimeSessionProps {
   session: TimeSessionType;
@@ -11,12 +11,13 @@ interface TimeSessionProps {
 }
 
 const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
-  const { deleteSession, updateSessionNote } = useProjects();
+  const { deleteSession, updateSessionNote, resumeSession, moveSessionToProject } = useProjects();
   const [isEditing, setIsEditing] = useState(false);
   const [note, setNote] = useState(session.note);
   const [currentDuration, setCurrentDuration] = useState(
     session.duration || calculateSessionDuration(session.startTime, session.endTime)
   );
+  const [isDragging, setIsDragging] = useState(false);
   
   // Update time for active sessions
   useEffect(() => {
@@ -43,11 +44,38 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
       deleteSession(projectId, session.id);
     }
   };
+
+  const handleResumeSession = () => {
+    if (session.endTime) {
+      resumeSession(projectId, session.id);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    // Set the session and project data in the drag event
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      sessionId: session.id,
+      sourceProjectId: projectId
+    }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
   
   const isActive = session.endTime === null;
   
   return (
-    <div className={`p-3 rounded-md bg-card border hover:shadow-subtle transition-all ${isActive ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20' : ''}`}>
+    <div 
+      className={`p-3 rounded-md bg-card border hover:shadow-subtle transition-all 
+        ${isActive ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20' : ''} 
+        ${isDragging ? 'opacity-50' : ''}`}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -56,6 +84,7 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
               {formatDate(session.startTime)} {formatTime(session.startTime)} - 
               {session.endTime ? ` ${formatTime(session.endTime)}` : ' In progress'}
             </span>
+            <Move className="h-3 w-3 ml-1 text-muted-foreground cursor-move" title="Drag to move session" />
           </div>
           
           <div className={`text-sm font-mono tracking-tighter mt-1 ${isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
@@ -102,13 +131,24 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
           )}
         </div>
         
-        <button
-          onClick={handleDeleteSession}
-          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10 flex-shrink-0"
-          title="Delete session"
-        >
-          <Trash className="h-3 w-3" />
-        </button>
+        <div className="flex flex-col gap-1">
+          {!isActive && session.endTime && (
+            <button
+              onClick={handleResumeSession}
+              className="text-muted-foreground hover:text-green-600 transition-colors p-1 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 flex-shrink-0"
+              title="Resume session"
+            >
+              <Play className="h-3 w-3" />
+            </button>
+          )}
+          <button
+            onClick={handleDeleteSession}
+            className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10 flex-shrink-0"
+            title="Delete session"
+          >
+            <Trash className="h-3 w-3" />
+          </button>
+        </div>
       </div>
     </div>
   );

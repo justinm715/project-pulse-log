@@ -11,11 +11,12 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
-  const { startSession, stopSession, deleteProject, updateProjectName } = useProjects();
+  const { startSession, stopSession, deleteProject, updateProjectName, moveSessionToProject } = useProjects();
   const [showSessions, setShowSessions] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [projectName, setProjectName] = useState(project.name);
   const [elapsedTime, setElapsedTime] = useState(project.totalTime);
+  const [isDropTarget, setIsDropTarget] = useState(false);
   
   // Update the elapsed time for active projects every second
   useEffect(() => {
@@ -60,6 +61,31 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
       setEditingTitle(false);
     }
   };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDropTarget(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDropTarget(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDropTarget(false);
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const { sessionId, sourceProjectId } = data;
+      
+      if (sessionId && sourceProjectId && sourceProjectId !== project.id) {
+        moveSessionToProject(sourceProjectId, sessionId, project.id);
+      }
+    } catch (error) {
+      console.error('Error parsing drag data:', error);
+    }
+  };
   
   // Get sessions in reverse chronological order (newest first)
   const sortedSessions = [...project.sessions].sort((a, b) => {
@@ -70,8 +96,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     <div 
       className={`rounded-lg glass shadow-glass hover:shadow-glass-hover transition-all overflow-hidden ${
         project.isActive ? 'border-green-400 dark:border-green-500' : ''
-      }`}
+      } ${isDropTarget ? 'ring-2 ring-primary ring-offset-2' : ''}`}
       style={{ borderLeft: `3px solid ${project.isActive ? '#4ade80' : project.color}` }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div className="p-3">
         <div className="flex items-center justify-between">

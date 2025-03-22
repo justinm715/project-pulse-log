@@ -13,6 +13,8 @@ interface ProjectContextType {
   stopSession: (projectId: string, note?: string) => void;
   deleteSession: (projectId: string, sessionId: string) => void;
   updateSessionNote: (projectId: string, sessionId: string, note: string) => void;
+  resumeSession: (projectId: string, sessionId: string) => void;
+  moveSessionToProject: (sourceProjectId: string, sessionId: string, targetProjectId: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -222,6 +224,103 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
+  const resumeSession = (projectId: string, sessionId: string) => {
+    if (activeProject) {
+      stopSession(activeProject.id);
+    }
+
+    setProjects(prev => {
+      let existingSession: TimeSession | undefined;
+      let updatedProjects = prev.map(project => {
+        if (project.id === projectId) {
+          const sessionIndex = project.sessions.findIndex(session => session.id === sessionId);
+          if (sessionIndex !== -1) {
+            existingSession = project.sessions[sessionIndex];
+          }
+        }
+        return project;
+      });
+
+      if (!existingSession) {
+        toast.error("Session not found");
+        return prev;
+      }
+
+      const now = new Date();
+      const newSession: TimeSession = {
+        id: Date.now().toString(),
+        projectId,
+        startTime: now,
+        endTime: null,
+        note: existingSession.note,
+      };
+
+      return updatedProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            isActive: true,
+            sessions: [...project.sessions, newSession]
+          };
+        }
+        
+        return {
+          ...project,
+          isActive: false
+        };
+      });
+    });
+
+    const projectToActivate = projects.find(p => p.id === projectId) || null;
+    setActiveProject(projectToActivate);
+    
+    toast.success("Session resumed");
+  };
+
+  const moveSessionToProject = (sourceProjectId: string, sessionId: string, targetProjectId: string) => {
+    setProjects(prev => {
+      let sessionToMove: TimeSession | undefined;
+      
+      const updatedProjects = prev.map(project => {
+        if (project.id === sourceProjectId) {
+          const sourceSessionIndex = project.sessions.findIndex(s => s.id === sessionId);
+          
+          if (sourceSessionIndex !== -1) {
+            sessionToMove = {...project.sessions[sourceSessionIndex], projectId: targetProjectId};
+            
+            const updatedSessions = project.sessions.filter(s => s.id !== sessionId);
+            
+            return {
+              ...project,
+              sessions: updatedSessions,
+              totalTime: calculateTotalTime(updatedSessions)
+            };
+          }
+        }
+        return project;
+      });
+      
+      if (sessionToMove) {
+        return updatedProjects.map(project => {
+          if (project.id === targetProjectId) {
+            const updatedSessions = [...project.sessions, sessionToMove!];
+            
+            return {
+              ...project,
+              sessions: updatedSessions,
+              totalTime: calculateTotalTime(updatedSessions)
+            };
+          }
+          return project;
+        });
+      }
+      
+      return updatedProjects;
+    });
+    
+    toast.success("Session moved to another project");
+  };
+
   return (
     <ProjectContext.Provider
       value={{
@@ -233,7 +332,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         startSession,
         stopSession,
         deleteSession,
-        updateSessionNote
+        updateSessionNote,
+        resumeSession,
+        moveSessionToProject
       }}
     >
       {children}
