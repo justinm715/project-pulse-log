@@ -9,7 +9,7 @@ const ProjectGrid: React.FC = () => {
   const { projects } = useProjects();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {projects.map(project => (
         <ProjectCard key={project.id} project={project} />
       ))}
@@ -23,7 +23,7 @@ const Index: React.FC = () => {
     <ProjectProvider>
       <div className="min-h-screen bg-background overflow-x-hidden">
         <Header />
-        <main className="max-w-5xl mx-auto px-4 pb-20">
+        <main className="max-w-7xl mx-auto px-3 pb-12">
           <ProjectGrid />
         </main>
       </div>

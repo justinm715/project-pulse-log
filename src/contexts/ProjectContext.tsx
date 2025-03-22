@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, TimeSession } from '@/types';
 import { toast } from 'sonner';
@@ -9,6 +8,7 @@ interface ProjectContextType {
   activeProject: Project | null;
   addProject: (name: string) => void;
   deleteProject: (id: string) => void;
+  updateProjectName: (id: string, name: string) => void;
   startSession: (projectId: string) => void;
   stopSession: (projectId: string, note?: string) => void;
   deleteSession: (projectId: string, sessionId: string) => void;
@@ -29,12 +29,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
 
-  // Load from localStorage on initial render
   useEffect(() => {
     const savedProjects = localStorage.getItem('timeTrackerProjects');
     if (savedProjects) {
       try {
-        // Need to convert string dates back to Date objects
         const parsedProjects: Project[] = JSON.parse(savedProjects, (key, value) => {
           if (key === 'startTime' || key === 'endTime') {
             return value ? new Date(value) : null;
@@ -44,7 +42,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         setProjects(parsedProjects);
         
-        // Find any active project
         const active = parsedProjects.find(p => p.isActive);
         if (active) {
           setActiveProject(active);
@@ -56,12 +53,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  // Save to localStorage whenever projects change
   useEffect(() => {
     localStorage.setItem('timeTrackerProjects', JSON.stringify(projects));
   }, [projects]);
 
-  // Add a new project
   const addProject = (name: string) => {
     if (!name.trim()) {
       toast.error('Project name cannot be empty');
@@ -81,7 +76,29 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success(`Added project: ${name}`);
   };
 
-  // Delete a project
+  const updateProjectName = (id: string, name: string) => {
+    if (!name.trim()) {
+      toast.error('Project name cannot be empty');
+      return;
+    }
+    
+    setProjects(prev => prev.map(project => {
+      if (project.id === id) {
+        return {
+          ...project,
+          name
+        };
+      }
+      return project;
+    }));
+    
+    if (activeProject?.id === id) {
+      setActiveProject(prev => prev ? { ...prev, name } : null);
+    }
+    
+    toast.success(`Project renamed to: ${name}`);
+  };
+
   const deleteProject = (id: string) => {
     setProjects(prev => prev.filter(p => p.id !== id));
     
@@ -92,9 +109,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Project deleted');
   };
 
-  // Start a time session for a project
   const startSession = (projectId: string) => {
-    // If there's already an active project, stop its session first
     if (activeProject && activeProject.id !== projectId) {
       stopSession(activeProject.id);
     }
@@ -103,7 +118,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     setProjects(prev => prev.map(project => {
       if (project.id === projectId) {
-        // Start a new session
         const newSession: TimeSession = {
           id: Date.now().toString(),
           projectId,
@@ -119,18 +133,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
       }
       
-      // Make sure other projects are marked as inactive
       return {
         ...project,
         isActive: false
       };
     }));
     
-    // Update active project reference
     setActiveProject(projects.find(p => p.id === projectId) || null);
   };
 
-  // Stop the active time session
   const stopSession = (projectId: string, note: string = '') => {
     const now = new Date();
     
@@ -138,23 +149,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (project.id === projectId && project.isActive) {
         const updatedSessions = [...project.sessions];
         
-        // Find the active session (should be the last one)
         const activeSessionIndex = updatedSessions.findIndex(s => s.endTime === null);
         
         if (activeSessionIndex !== -1) {
           const activeSession = updatedSessions[activeSessionIndex];
           const duration = now.getTime() - activeSession.startTime.getTime();
           
-          // Update the session with end time and duration
           updatedSessions[activeSessionIndex] = {
             ...activeSession,
             endTime: now,
-            note: note || activeSession.note, // Keep existing note if no new note
+            note: note || activeSession.note,
             duration
           };
         }
         
-        // Calculate total time for this project
         const totalTime = calculateTotalTime(updatedSessions);
         
         return {
@@ -168,17 +176,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return project;
     }));
     
-    // Clear active project
     setActiveProject(null);
   };
 
-  // Delete a session
   const deleteSession = (projectId: string, sessionId: string) => {
     setProjects(prev => prev.map(project => {
       if (project.id === projectId) {
         const updatedSessions = project.sessions.filter(s => s.id !== sessionId);
         
-        // Recalculate total time for this project
         const totalTime = calculateTotalTime(updatedSessions);
         
         return {
@@ -194,7 +199,6 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Session deleted');
   };
 
-  // Update a session's note
   const updateSessionNote = (projectId: string, sessionId: string, note: string) => {
     setProjects(prev => prev.map(project => {
       if (project.id === projectId) {
@@ -225,6 +229,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         activeProject,
         addProject,
         deleteProject,
+        updateProjectName,
         startSession,
         stopSession,
         deleteSession,

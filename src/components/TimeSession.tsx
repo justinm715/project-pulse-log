@@ -33,43 +33,43 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
   };
   
   return (
-    <div className="p-4 rounded-lg bg-card border hover:shadow-subtle transition-all">
-      <div className="flex items-start justify-between gap-3">
+    <div className="p-3 rounded-md bg-card border hover:shadow-subtle transition-all">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <Clock className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
             <span>
               {formatDate(session.startTime)} {formatTime(session.startTime)} - 
               {session.endTime ? ` ${formatTime(session.endTime)}` : ' In progress'}
             </span>
           </div>
           
-          <div className="text-base font-mono tracking-tighter">
+          <div className="text-sm font-mono tracking-tighter mt-1">
             {formatDuration(duration)}
           </div>
           
           {isEditing ? (
-            <div className="mt-2 space-y-2">
+            <div className="mt-1 space-y-1">
               <textarea
                 value={note}
                 onChange={handleNoteChange}
-                placeholder="Add notes about what you worked on..."
-                className="w-full p-2 text-sm rounded-md border focus-ring min-h-[80px]"
+                placeholder="Add notes..."
+                className="w-full p-1.5 text-xs rounded-md border focus-ring min-h-[60px]"
                 autoFocus
               />
-              <div className="flex gap-2 justify-end">
+              <div className="flex gap-1 justify-end">
                 <button
                   onClick={() => {
                     setNote(session.note);
                     setIsEditing(false);
                   }}
-                  className="px-2 py-1 text-xs rounded-md hover:bg-secondary transition-colors"
+                  className="px-1.5 py-0.5 text-xs rounded-md hover:bg-secondary transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveNote}
-                  className="px-2 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  className="px-1.5 py-0.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   Save
                 </button>
@@ -78,9 +78,9 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
           ) : (
             <div 
               onClick={() => setIsEditing(true)}
-              className="mt-1 text-sm text-muted-foreground hover:text-foreground cursor-pointer group flex items-start gap-1.5"
+              className="mt-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer group flex items-start gap-1"
             >
-              <AlignLeft className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <AlignLeft className="h-3 w-3 mt-0.5 flex-shrink-0" />
               <span className="group-hover:underline decoration-dotted underline-offset-2">
                 {session.note || "Add notes..."}
               </span>
@@ -90,10 +90,10 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
         
         <button
           onClick={handleDeleteSession}
-          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
+          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10 flex-shrink-0"
           title="Delete session"
         >
-          <Trash className="h-4 w-4" />
+          <Trash className="h-3 w-3" />
         </button>
       </div>
     </div>
