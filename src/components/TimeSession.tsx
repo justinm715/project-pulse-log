@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { TimeSession as TimeSessionType } from '@/types';
 import { formatTime, formatDate, formatDuration, calculateSessionDuration } from '@/lib/timeUtils';
 import { useProjects } from '@/contexts/ProjectContext';
-import { Clock, AlignLeft, Trash, Play, Move } from 'lucide-react';
+import { Clock, AlignLeft, Trash, Play, Move, Timer } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { format } from 'date-fns';
 
 interface TimeSessionProps {
   session: TimeSessionType;
@@ -19,8 +20,10 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
     session.duration || calculateSessionDuration(session.startTime, session.endTime)
   );
   const [isDragging, setIsDragging] = useState(false);
-  
-  // Update time for active sessions
+  const [isEditingTime, setIsEditingTime] = useState(false);
+  const [editStartTime, setEditStartTime] = useState(format(session.startTime, "yyyy-MM-dd'T'HH:mm"));
+  const [editEndTime, setEditEndTime] = useState(session.endTime ? format(session.endTime, "yyyy-MM-dd'T'HH:mm") : '');
+
   useEffect(() => {
     if (session.endTime === null) {
       const interval = setInterval(() => {
@@ -30,16 +33,16 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
       return () => clearInterval(interval);
     }
   }, [session]);
-  
+
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNote(e.target.value);
   };
-  
+
   const handleSaveNote = () => {
     updateSessionNote(projectId, session.id, note);
     setIsEditing(false);
   };
-  
+
   const handleDeleteSession = () => {
     if (confirm('Are you sure you want to delete this time session?')) {
       deleteSession(projectId, session.id);
@@ -54,8 +57,7 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
 
   const handleDragStart = (e: React.DragEvent) => {
     setIsDragging(true);
-    // Set the session and project data in the drag event
-    e.dataTransfer.setData('application/json', JSON.stringify({
+    e.dataTransfer.setData('text/plain', JSON.stringify({
       sessionId: session.id,
       sourceProjectId: projectId
     }));
@@ -65,19 +67,50 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
   const handleDragEnd = () => {
     setIsDragging(false);
   };
-  
+
+  const handleEditTimes = () => {
+    if (isEditingTime) {
+      try {
+        const newStartTime = new Date(editStartTime);
+        const newEndTime = editEndTime ? new Date(editEndTime) : null;
+        
+        if (newEndTime && newEndTime <= newStartTime) {
+          alert('End time must be after start time');
+          return;
+        }
+
+        const updatedSession = {
+          ...session,
+          startTime: newStartTime,
+          endTime: newEndTime,
+          duration: newEndTime ? calculateSessionDuration(newStartTime, newEndTime) : undefined
+        };
+
+        moveSessionToProject(projectId, session.id, projectId, updatedSession);
+        setIsEditingTime(false);
+      } catch (error) {
+        alert('Invalid date format');
+      }
+    } else {
+      setIsEditingTime(true);
+    }
+  };
+
   const isActive = session.endTime === null;
-  
+
   return (
     <TableRow 
       className={`${isActive ? 'bg-green-50/50 dark:bg-green-950/20' : ''} 
-        ${isDragging ? 'opacity-50' : ''} ml-6 border-l-2 border-l-muted/30`}
+        ${isDragging ? 'opacity-50' : ''} border-l-2 border-l-muted/30`}
       draggable={true}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <TableCell className={`py-1 px-2 font-mono tracking-tighter text-xs ${isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
-        {formatDuration(currentDuration)}
+        <div className="flex items-center gap-1">
+          <Timer className="h-3 w-3 text-muted-foreground" />
+          {formatDuration(currentDuration)}
+        </div>
       </TableCell>
       <TableCell className="py-1 px-2 text-xs">
         {isEditing ? (
@@ -120,12 +153,45 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
         )}
       </TableCell>
       <TableCell className="py-1 px-2 text-xs whitespace-nowrap">
-        {formatDate(session.startTime)} {formatTime(session.startTime)}
+        {isEditingTime ? (
+          <Input
+            type="datetime-local"
+            value={editStartTime}
+            onChange={(e) => setEditStartTime(e.target.value)}
+            className="h-7 text-xs"
+          />
+        ) : (
+          <div className="flex items-center gap-1 cursor-pointer" onClick={handleEditTimes}>
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            {formatDate(session.startTime)} {formatTime(session.startTime)}
+          </div>
+        )}
       </TableCell>
       <TableCell className="py-1 px-2 text-xs whitespace-nowrap">
-        {session.endTime ? `${formatDate(session.endTime)} ${formatTime(session.endTime)}` : 
-          <span className="text-green-600 dark:text-green-400">In progress</span>
-        }
+        {isEditingTime ? (
+          <div className="flex items-center gap-2">
+            <Input
+              type="datetime-local"
+              value={editEndTime}
+              onChange={(e) => setEditEndTime(e.target.value)}
+              className="h-7 text-xs"
+            />
+            <button
+              onClick={handleEditTimes}
+              className="px-2 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Save
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 cursor-pointer" onClick={handleEditTimes}>
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            {session.endTime ? 
+              `${formatDate(session.endTime)} ${formatTime(session.endTime)}` : 
+              <span className="text-green-600 dark:text-green-400">In progress</span>
+            }
+          </div>
+        )}
       </TableCell>
       <TableCell className="py-1 px-2 text-right">
         <div className="flex items-center justify-end space-x-1">

@@ -113,14 +113,19 @@ const ProjectTable: React.FC = () => {
 
   const handleDragOver = (e: React.DragEvent, projectId: string) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.currentTarget.classList.add('bg-muted/50');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('bg-muted/50');
   };
 
   const handleDrop = (e: React.DragEvent, targetProjectId: string) => {
     e.preventDefault();
+    e.currentTarget.classList.remove('bg-muted/50');
+    
     try {
-      const data = JSON.parse(e.dataTransfer.getData('application/json'));
-      
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
       if (data.sessionId && data.sourceProjectId && data.sourceProjectId !== targetProjectId) {
         moveSessionToProject(data.sourceProjectId, data.sessionId, targetProjectId);
       }
@@ -148,6 +153,7 @@ const ProjectTable: React.FC = () => {
                 <TableRow 
                   className={project.isActive ? 'bg-green-50/50 dark:bg-green-950/20' : ''}
                   onDragOver={(e) => handleDragOver(e, project.id)}
+                  onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, project.id)}
                 >
                   <TableCell 
