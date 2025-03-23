@@ -71,30 +71,22 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
   return (
     <TableRow 
       className={`${isActive ? 'bg-green-50/50 dark:bg-green-950/20' : ''} 
-        ${isDragging ? 'opacity-50' : ''}`}
+        ${isDragging ? 'opacity-50' : ''} ml-6 border-l-2 border-l-muted/30`}
       draggable={true}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <TableCell className={`text-xs ${isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
-        {formatDate(session.startTime)} {formatTime(session.startTime)}
-      </TableCell>
-      <TableCell className="text-xs">
-        {session.endTime ? `${formatDate(session.endTime)} ${formatTime(session.endTime)}` : 
-          <span className="text-green-600 dark:text-green-400">In progress</span>
-        }
-      </TableCell>
-      <TableCell className={`font-mono tracking-tighter text-xs ${isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
+      <TableCell className={`py-1 px-2 font-mono tracking-tighter text-xs ${isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
         {formatDuration(currentDuration)}
       </TableCell>
-      <TableCell className="text-xs">
+      <TableCell className="py-1 px-2 text-xs">
         {isEditing ? (
           <div className="space-y-1">
             <textarea
               value={note}
               onChange={handleNoteChange}
               placeholder="Add notes..."
-              className="w-full p-1.5 text-xs rounded-md border focus-ring min-h-[60px]"
+              className="w-full p-1 text-xs rounded-md border focus-ring min-h-[40px]"
               autoFocus
             />
             <div className="flex gap-1 justify-end">
@@ -103,13 +95,13 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
                   setNote(session.note);
                   setIsEditing(false);
                 }}
-                className="px-1.5 py-0.5 text-xs rounded-md hover:bg-secondary transition-colors"
+                className="px-1 py-0.5 text-xs rounded-md hover:bg-secondary transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveNote}
-                className="px-1.5 py-0.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="px-1 py-0.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Save
               </button>
@@ -127,7 +119,15 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
           </div>
         )}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="py-1 px-2 text-xs whitespace-nowrap">
+        {formatDate(session.startTime)} {formatTime(session.startTime)}
+      </TableCell>
+      <TableCell className="py-1 px-2 text-xs whitespace-nowrap">
+        {session.endTime ? `${formatDate(session.endTime)} ${formatTime(session.endTime)}` : 
+          <span className="text-green-600 dark:text-green-400">In progress</span>
+        }
+      </TableCell>
+      <TableCell className="py-1 px-2 text-right">
         <div className="flex items-center justify-end space-x-1">
           <div className="flex-shrink-0 p-1 text-muted-foreground cursor-move">
             <Move className="h-3 w-3" aria-label="Drag to move session" />

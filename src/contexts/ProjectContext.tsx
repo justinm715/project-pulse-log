@@ -14,7 +14,7 @@ interface ProjectContextType {
   deleteSession: (projectId: string, sessionId: string) => void;
   updateSessionNote: (projectId: string, sessionId: string, note: string) => void;
   resumeSession: (projectId: string, sessionId: string) => void;
-  moveSessionToProject: (sourceProjectId: string, sessionId: string, targetProjectId: string) => void;
+  moveSessionToProject: (sourceProjectId: string, sessionId: string, targetProjectId: string, newSession?: TimeSession) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -277,8 +277,30 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success("Session resumed");
   };
 
-  const moveSessionToProject = (sourceProjectId: string, sessionId: string, targetProjectId: string) => {
+  const moveSessionToProject = (
+    sourceProjectId: string, 
+    sessionId: string, 
+    targetProjectId: string,
+    newSession?: TimeSession
+  ) => {
     setProjects(prev => {
+      // Handle case where we're adding a new session
+      if (newSession && sourceProjectId === 'temp') {
+        return prev.map(project => {
+          if (project.id === targetProjectId) {
+            const updatedSessions = [...project.sessions, newSession];
+            
+            return {
+              ...project,
+              sessions: updatedSessions,
+              totalTime: calculateTotalTime(updatedSessions)
+            };
+          }
+          return project;
+        });
+      }
+      
+      // Handle case where we're moving an existing session
       let sessionToMove: TimeSession | undefined;
       
       const updatedProjects = prev.map(project => {
@@ -318,7 +340,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return updatedProjects;
     });
     
-    toast.success("Session moved to another project");
+    toast.success(newSession ? "Time entry added" : "Session moved to another project");
   };
 
   return (

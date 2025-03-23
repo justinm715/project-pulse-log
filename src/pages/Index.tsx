@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ProjectProvider, useProjects } from '@/contexts/ProjectContext';
 import Header from '@/components/Header';
 import { 
@@ -12,17 +12,22 @@ import {
 } from "@/components/ui/table";
 import TimeSession from '@/components/TimeSession';
 import AddProjectButton from '@/components/AddProjectButton';
+import AddSessionForm from '@/components/AddSessionForm';
 import { 
-  Clock, 
   Edit, 
   Trash, 
   Play, 
   Pause, 
-  ChevronDown, 
-  ChevronUp 
+  Plus
 } from 'lucide-react';
 import { formatDuration } from '@/lib/timeUtils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from '@/components/ui/button';
 
 const ProjectTable: React.FC = () => {
   const { 
@@ -30,28 +35,26 @@ const ProjectTable: React.FC = () => {
     startSession, 
     stopSession, 
     deleteProject, 
-    updateProjectName 
+    updateProjectName,
+    moveSessionToProject
   } = useProjects();
-  const [expandedProjects, setExpandedProjects] = React.useState<Record<string, boolean>>({});
-  const [editingTitle, setEditingTitle] = React.useState<string | null>(null);
-  const [projectName, setProjectName] = React.useState<Record<string, string>>({});
+  const [editingTitle, setEditingTitle] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState<Record<string, string>>({});
+  const [addingSessionToProject, setAddingSessionToProject] = useState<string | null>(null);
   
   // For updating active session times
-  const [elapsedTimes, setElapsedTimes] = React.useState<Record<string, number>>({});
+  const [elapsedTimes, setElapsedTimes] = useState<Record<string, number>>({});
 
   React.useEffect(() => {
-    // Initialize expanded state and project names
-    const expanded: Record<string, boolean> = {};
+    // Initialize project names
     const names: Record<string, string> = {};
     const times: Record<string, number> = {};
     
     projects.forEach(project => {
-      expanded[project.id] = expandedProjects[project.id] || false;
       names[project.id] = project.name;
       times[project.id] = project.totalTime;
     });
     
-    setExpandedProjects(expanded);
     setProjectName(names);
     setElapsedTimes(times);
   }, [projects]);
@@ -78,13 +81,6 @@ const ProjectTable: React.FC = () => {
     
     return () => clearInterval(interval);
   }, [projects, elapsedTimes]);
-
-  const toggleExpand = (projectId: string) => {
-    setExpandedProjects(prev => ({
-      ...prev,
-      [projectId]: !prev[projectId]
-    }));
-  };
 
   const handleStartStop = (projectId: string, isActive: boolean) => {
     if (isActive) {
@@ -115,35 +111,49 @@ const ProjectTable: React.FC = () => {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent, projectId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, targetProjectId: string) => {
+    e.preventDefault();
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      
+      if (data.sessionId && data.sourceProjectId && data.sourceProjectId !== targetProjectId) {
+        moveSessionToProject(data.sourceProjectId, data.sessionId, targetProjectId);
+      }
+    } catch (error) {
+      console.error("Error processing dropped data:", error);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <ScrollArea className="h-[calc(100vh-120px)]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40px]"></TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="p-2">Duration</TableHead>
+              <TableHead className="p-2">Notes</TableHead>
+              <TableHead className="p-2">Start Time</TableHead>
+              <TableHead className="p-2">End Time</TableHead>
+              <TableHead className="p-2 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {projects.map(project => (
               <React.Fragment key={project.id}>
-                <TableRow className={project.isActive ? 'bg-green-50/50 dark:bg-green-950/20' : ''}>
-                  <TableCell>
-                    <button 
-                      onClick={() => toggleExpand(project.id)}
-                      className="p-1 rounded-sm hover:bg-muted/80"
-                    >
-                      {expandedProjects[project.id] ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  </TableCell>
-                  <TableCell>
+                <TableRow 
+                  className={project.isActive ? 'bg-green-50/50 dark:bg-green-950/20' : ''}
+                  onDragOver={(e) => handleDragOver(e, project.id)}
+                  onDrop={(e) => handleDrop(e, project.id)}
+                >
+                  <TableCell 
+                    colSpan={2}
+                    className="p-2"
+                  >
                     <div 
                       className="flex items-center" 
                       style={{ 
@@ -165,19 +175,41 @@ const ProjectTable: React.FC = () => {
                           onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle(project.id)}
                         />
                       ) : (
-                        <span className={project.isActive ? 'text-green-600 dark:text-green-400 font-medium' : 'font-medium'}>
+                        <span className={`${project.isActive ? 'text-green-600 dark:text-green-400 font-medium' : 'font-medium'} text-sm`}>
                           {project.name}
                         </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-2 text-xs whitespace-nowrap">
                     <span className={`font-mono tracking-tighter ${project.isActive ? 'text-green-600 dark:text-green-400' : ''}`}>
                       {formatDuration(elapsedTimes[project.id] || project.totalTime)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell colSpan={2} className="p-2 text-right">
                     <div className="flex items-center justify-end space-x-1">
+                      <Popover open={addingSessionToProject === project.id} onOpenChange={(open) => {
+                        if (!open) setAddingSessionToProject(null);
+                      }}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            onClick={() => setAddingSessionToProject(project.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Add Entry
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-2" align="end">
+                          <AddSessionForm 
+                            projectId={project.id} 
+                            onClose={() => setAddingSessionToProject(null)} 
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      
                       <button
                         onClick={() => handleEditTitle(project.id)}
                         className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground"
@@ -211,43 +243,23 @@ const ProjectTable: React.FC = () => {
                   </TableCell>
                 </TableRow>
                 
-                {expandedProjects[project.id] && project.sessions.length > 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="p-0">
-                      <div className="bg-muted/30 px-4 py-2">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="border-b border-border/40">
-                              <TableHead className="py-2">Start Time</TableHead>
-                              <TableHead className="py-2">End Time</TableHead>
-                              <TableHead className="py-2">Duration</TableHead>
-                              <TableHead className="py-2">Notes</TableHead>
-                              <TableHead className="py-2 text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {[...project.sessions]
-                              .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-                              .map(session => (
-                                <TimeSession
-                                  key={session.id}
-                                  session={session}
-                                  projectId={project.id}
-                                />
-                              ))
-                            }
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                {project.sessions.length > 0 && (
+                  [...project.sessions]
+                    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+                    .map(session => (
+                      <TimeSession
+                        key={session.id}
+                        session={session}
+                        projectId={project.id}
+                      />
+                    ))
                 )}
               </React.Fragment>
             ))}
           </TableBody>
         </Table>
       </ScrollArea>
-      <div className="p-3 border-t">
+      <div className="p-2 border-t">
         <AddProjectButton />
       </div>
     </div>
