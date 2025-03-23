@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TimeSession as TimeSessionType } from '@/types';
 import { formatTime, formatDate, formatDuration, calculateSessionDuration } from '@/lib/timeUtils';
@@ -10,9 +11,10 @@ import { format } from 'date-fns';
 interface TimeSessionProps {
   session: TimeSessionType;
   projectId: string;
+  isDraggingOver?: boolean;
 }
 
-const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
+const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggingOver }) => {
   const { deleteSession, updateSessionNote, resumeSession, moveSessionToProject } = useProjects();
   const [isEditing, setIsEditing] = useState(false);
   const [note, setNote] = useState(session.note);
@@ -32,6 +34,12 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
       
       return () => clearInterval(interval);
     }
+  }, [session]);
+
+  useEffect(() => {
+    setCurrentDuration(session.duration || calculateSessionDuration(session.startTime, session.endTime));
+    setEditStartTime(format(session.startTime, "yyyy-MM-dd'T'HH:mm"));
+    setEditEndTime(session.endTime ? format(session.endTime, "yyyy-MM-dd'T'HH:mm") : '');
   }, [session]);
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -101,7 +109,9 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId }) => {
   return (
     <TableRow 
       className={`${isActive ? 'bg-green-50/50 dark:bg-green-950/20' : ''} 
-        ${isDragging ? 'opacity-50' : ''} border-l-2 border-l-muted/30`}
+        ${isDraggingOver ? 'bg-primary/10 border-l-primary' : ''} 
+        ${isDragging ? 'opacity-50' : ''} 
+        border-l-4 border-l-muted/30 even:bg-muted/10 odd:bg-transparent`}
       draggable={true}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
