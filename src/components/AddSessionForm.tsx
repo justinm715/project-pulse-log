@@ -15,11 +15,14 @@ interface AddSessionFormProps {
 }
 
 const AddSessionForm: React.FC<AddSessionFormProps> = ({ projectId, onClose }) => {
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+
   const { projects, moveSessionToProject } = useProjects();
   const [startDate, setStartDate] = useState<Date>(new Date());
-  const [startTime, setStartTime] = useState('09:00:00');
+  const [startTime, setStartTime] = useState(now.toTimeString().slice(0, 8)); // "HH:MM:SS"
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [endTime, setEndTime] = useState('17:00:00');
+  const [endTime, setEndTime] = useState(oneHourLater.toTimeString().slice(0, 8)); // "HH:MM:SS"
   const [note, setNote] = useState('');
   
   const currentProject = projects.find(p => p.id === projectId);

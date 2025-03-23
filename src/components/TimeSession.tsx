@@ -15,7 +15,7 @@ interface TimeSessionProps {
 }
 
 const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggingOver }) => {
-  const { deleteSession, updateSessionNote, resumeSession, moveSessionToProject } = useProjects();
+  const { deleteSession, updateSessionNote, resumeSession, moveSessionToProject, updateSession } = useProjects();
   const [isEditing, setIsEditing] = useState(false);
   const [note, setNote] = useState(session.note);
   const [currentDuration, setCurrentDuration] = useState(
@@ -99,7 +99,12 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggin
         };
 
         // Update the session in the project context
-        moveSessionToProject(projectId, session.id, projectId, updatedSession);
+        // moveSessionToProject(projectId, session.id, projectId, updatedSession);
+        updateSession(projectId, session.id, {
+          startTime: newStartTime,
+          endTime: newEndTime,
+          duration: newDuration,
+        });
         setIsEditingTime(false);
       } catch (error) {
         alert('Invalid date format');
