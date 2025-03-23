@@ -87,13 +87,18 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggin
           return;
         }
 
+        // Calculate the new duration
+        const newDuration = newEndTime ? calculateSessionDuration(newStartTime, newEndTime) : undefined;
+        
+        // Create updated session with new times and duration
         const updatedSession = {
           ...session,
           startTime: newStartTime,
           endTime: newEndTime,
-          duration: newEndTime ? calculateSessionDuration(newStartTime, newEndTime) : undefined
+          duration: newDuration
         };
 
+        // Update the session in the project context
         moveSessionToProject(projectId, session.id, projectId, updatedSession);
         setIsEditingTime(false);
       } catch (error) {

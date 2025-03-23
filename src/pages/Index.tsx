@@ -37,7 +37,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const OverviewPanel: React.FC = () => {
-  const { projects } = useProjects();
+  const { projects, clearAllSessions, clearAllProjects } = useProjects();
   const [totalTime, setTotalTime] = useState(0);
   const [sessionCount, setSessionCount] = useState(0);
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');
@@ -79,13 +79,16 @@ const OverviewPanel: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-2">
+        <div className="mr-2">
+          <AddProjectButton />
+        </div>
+        
         <Button 
           variant="outline" 
           size="sm"
           className="h-7 text-xs flex items-center gap-1"
           onClick={() => {
             if (confirm('Are you sure you want to clear all sessions? This cannot be undone.')) {
-              const { clearAllSessions } = useProjects();
               clearAllSessions();
               toast.success('All sessions cleared');
             }
@@ -101,7 +104,6 @@ const OverviewPanel: React.FC = () => {
           className="h-7 text-xs flex items-center gap-1 text-destructive hover:text-destructive-foreground hover:bg-destructive"
           onClick={() => {
             if (confirm('Are you sure you want to clear all projects and sessions? This cannot be undone.')) {
-              const { clearAllProjects } = useProjects();
               clearAllProjects();
               toast.success('All projects cleared');
             }
@@ -122,9 +124,7 @@ const ProjectTable: React.FC = () => {
     stopSession, 
     deleteProject, 
     updateProjectName,
-    moveSessionToProject,
-    clearAllSessions,
-    clearAllProjects
+    moveSessionToProject
   } = useProjects();
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<Record<string, string>>({});
@@ -359,9 +359,6 @@ const ProjectTable: React.FC = () => {
             </TableBody>
           </Table>
         </ScrollArea>
-        <div className="p-2 border-t">
-          <AddProjectButton />
-        </div>
       </div>
     </div>
   );
