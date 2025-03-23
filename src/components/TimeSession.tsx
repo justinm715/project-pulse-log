@@ -23,8 +23,8 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggin
   );
   const [isDragging, setIsDragging] = useState(false);
   const [isEditingTime, setIsEditingTime] = useState(false);
-  const [editStartTime, setEditStartTime] = useState(format(session.startTime, "yyyy-MM-dd'T'HH:mm"));
-  const [editEndTime, setEditEndTime] = useState(session.endTime ? format(session.endTime, "yyyy-MM-dd'T'HH:mm") : '');
+  const [editStartTime, setEditStartTime] = useState(format(session.startTime, "yyyy-MM-dd'T'HH:mm:ss"));
+  const [editEndTime, setEditEndTime] = useState(session.endTime ? format(session.endTime, "yyyy-MM-dd'T'HH:mm:ss") : '');
 
   useEffect(() => {
     if (session.endTime === null) {
@@ -38,8 +38,8 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggin
 
   useEffect(() => {
     setCurrentDuration(session.duration || calculateSessionDuration(session.startTime, session.endTime));
-    setEditStartTime(format(session.startTime, "yyyy-MM-dd'T'HH:mm"));
-    setEditEndTime(session.endTime ? format(session.endTime, "yyyy-MM-dd'T'HH:mm") : '');
+    setEditStartTime(format(session.startTime, "yyyy-MM-dd'T'HH:mm:ss"));
+    setEditEndTime(session.endTime ? format(session.endTime, "yyyy-MM-dd'T'HH:mm:ss") : '');
   }, [session]);
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -169,6 +169,7 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggin
             value={editStartTime}
             onChange={(e) => setEditStartTime(e.target.value)}
             className="h-7 text-xs"
+            step="1"
           />
         ) : (
           <div className="flex items-center gap-1 cursor-pointer" onClick={handleEditTimes}>
@@ -185,6 +186,7 @@ const TimeSession: React.FC<TimeSessionProps> = ({ session, projectId, isDraggin
               value={editEndTime}
               onChange={(e) => setEditEndTime(e.target.value)}
               className="h-7 text-xs"
+              step="1"
             />
             <button
               onClick={handleEditTimes}

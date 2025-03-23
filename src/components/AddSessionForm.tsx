@@ -17,9 +17,9 @@ interface AddSessionFormProps {
 const AddSessionForm: React.FC<AddSessionFormProps> = ({ projectId, onClose }) => {
   const { projects, moveSessionToProject } = useProjects();
   const [startDate, setStartDate] = useState<Date>(new Date());
-  const [startTime, setStartTime] = useState('09:00');
+  const [startTime, setStartTime] = useState('09:00:00');
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [endTime, setEndTime] = useState('17:00');
+  const [endTime, setEndTime] = useState('17:00:00');
   const [note, setNote] = useState('');
   
   const currentProject = projects.find(p => p.id === projectId);
@@ -30,14 +30,14 @@ const AddSessionForm: React.FC<AddSessionFormProps> = ({ projectId, onClose }) =
     e.preventDefault();
     
     // Create the complete start and end date/time objects
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    const [startHours, startMinutes, startSeconds] = startTime.split(':').map(Number);
+    const [endHours, endMinutes, endSeconds] = endTime.split(':').map(Number);
     
     const completeStartDate = new Date(startDate);
-    completeStartDate.setHours(startHours, startMinutes, 0);
+    completeStartDate.setHours(startHours, startMinutes, startSeconds || 0);
     
     const completeEndDate = new Date(endDate);
-    completeEndDate.setHours(endHours, endMinutes, 0);
+    completeEndDate.setHours(endHours, endMinutes, endSeconds || 0);
     
     // Validate that end time is after start time
     if (completeEndDate <= completeStartDate) {
@@ -101,6 +101,7 @@ const AddSessionForm: React.FC<AddSessionFormProps> = ({ projectId, onClose }) =
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               className="border-0 p-0 h-7 text-xs focus-visible:ring-0"
+              step="1"
             />
           </div>
         </div>
@@ -137,6 +138,7 @@ const AddSessionForm: React.FC<AddSessionFormProps> = ({ projectId, onClose }) =
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               className="border-0 p-0 h-7 text-xs focus-visible:ring-0"
+              step="1"
             />
           </div>
         </div>
