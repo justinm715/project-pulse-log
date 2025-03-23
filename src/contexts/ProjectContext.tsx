@@ -17,6 +17,7 @@ interface ProjectContextType {
   moveSessionToProject: (sourceProjectId: string, sessionId: string, targetProjectId: string, newSession?: TimeSession) => void;
   clearAllSessions: () => void;
   clearAllProjects: () => void;
+  updateSession: (projectId: string, sessionId: string, updatedFields: Partial<TimeSession>) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -279,6 +280,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success("Session resumed");
   };
 
+  const updateSession = (projectId: string, sessionId: string, updatedFields: Partial<TimeSession>) => {
+    setProjects(prev =>
+      prev.map(project => {
+        if (project.id === projectId) {
+          const updatedSessions = project.sessions.map(session =>
+            session.id === sessionId ? { ...session, ...updatedFields } : session
+          );
+          return {
+            ...project,
+            sessions: updatedSessions,
+            totalTime: calculateTotalTime(updatedSessions),
+          };
+        }
+        return project;
+      })
+    );
+  };
+  
+
   const moveSessionToProject = (
     sourceProjectId: string, 
     sessionId: string, 
@@ -374,7 +394,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         resumeSession,
         moveSessionToProject,
         clearAllSessions,
-        clearAllProjects
+        clearAllProjects,
+        updateSession,
       }}
     >
       {children}
